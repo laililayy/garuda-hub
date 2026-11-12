@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('title', 'Manajemen Pengguna - Garuda Hub')
@@ -6,7 +7,7 @@
 <div class="page-header">
     <div>
         <h1>Manajemen Pengguna</h1>
-        <p>Kelola seluruh pengguna yang terdaftar di Garuda Hub.</p>
+        <p>Kelola pengguna yang terdaftar di Garuda Hub.</p>
     </div>
 </div>
 
@@ -34,7 +35,7 @@
         <input
             type="text"
             name="search"
-            placeholder="Cari nama atau email pengguna..."
+            placeholder="Cari nama atau email..."
             value="{{ $search }}"
         >
 
@@ -83,7 +84,7 @@
                                     </button>
                                 </form>
                             @else
-                                <span>-</span>
+                                -
                             @endif
                         </td>
                     </tr>
@@ -96,8 +97,6 @@
         </table>
     </div>
 
-    <div class="pagination">
-        {{ $users->links() }}
-    </div>
+    {{ $users->links() }}
 </div>
 @endsection

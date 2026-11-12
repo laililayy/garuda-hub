@@ -6,11 +6,8 @@ use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        //
+        // Tidak menggunakan data dummy bawaan Laravel.
     }
 }
