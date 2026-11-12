@@ -1,97 +1,103 @@
 @extends('layouts.app')
 
-@section('title', 'Daftar Proyek - Garuda Hub')
+@section('title', 'Manajemen Pengguna - Garuda Hub')
 
 @section('content')
-
-    <div class="page-header">
-        <div>
-            <h1>Daftar Proyek</h1>
-            <p>Kelola seluruh proyek yang tersedia di Garuda Hub.</p>
-        </div>
-
-        <a href="{{ route('projects.create') }}" class="btn btn-primary">
-            + Tambah Proyek
-        </a>
+<div class="page-header">
+    <div>
+        <h1>Manajemen Pengguna</h1>
+        <p>Kelola seluruh pengguna yang terdaftar di Garuda Hub.</p>
     </div>
+</div>
 
-    @if (session('success'))
-        <div class="alert">
-            {{ session('success') }}
-        </div>
-    @endif
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Total Pengguna</h3>
+        <p>{{ $totalUsers }}</p>
+    </div>
+    <div class="stat-card">
+        <h3>Klien</h3>
+        <p>{{ $totalClients }}</p>
+    </div>
+    <div class="stat-card">
+        <h3>Developer</h3>
+        <p>{{ $totalDevelopers }}</p>
+    </div>
+    <div class="stat-card">
+        <h3>Admin</h3>
+        <p>{{ $totalAdmins }}</p>
+    </div>
+</div>
 
-    @forelse ($projects as $project)
+<div class="card">
+    <form method="GET" action="{{ route('admin.users.index') }}" class="search-form">
+        <input
+            type="text"
+            name="search"
+            placeholder="Cari nama atau email pengguna..."
+            value="{{ $search }}"
+        >
 
-        <div class="project-card">
+        <select name="role">
+            <option value="">Semua Role</option>
+            <option value="klien" {{ $role === 'klien' ? 'selected' : '' }}>Klien</option>
+            <option value="developer" {{ $role === 'developer' ? 'selected' : '' }}>Developer</option>
+            <option value="admin" {{ $role === 'admin' ? 'selected' : '' }}>Admin</option>
+        </select>
 
-            <h3>{{ $project->title }}</h3>
+        <button type="submit" class="btn btn-primary">Cari</button>
+        <a href="{{ route('admin.users.index') }}" class="btn btn-secondary">Reset</a>
+    </form>
 
-            <div class="project-info">
-                <p>
-                    Kategori: {{ $project->category }}
-                </p>
-
-                <p>
-                    Klien: {{ $project->client->name }}
-                </p>
-
-                <p>
-                    Budget:
-                    Rp{{ number_format((float) $project->budget_min, 0, ',', '.') }}
-                    -
-                    Rp{{ number_format((float) $project->budget_max, 0, ',', '.') }}
-                </p>
-
-                <p>
-                    Deadline: {{ $project->deadline->format('d-m-Y') }}
-                </p>
-
-                <p>
-                    Status: {{ ucfirst($project->status) }}
-                </p>
-            </div>
-
-            <p>{{ Str::limit($project->description, 150) }}</p>
-
-            <div class="actions">
-
-                <a href="{{ route('projects.show', $project->id) }}"
-                   class="btn btn-primary">
-                    Detail
-                </a>
-
-                <a href="{{ route('projects.edit', $project->id) }}"
-                   class="btn btn-secondary">
-                    Edit
-                </a>
-
-                <form action="{{ route('projects.destroy', $project->id) }}"
-                      method="POST"
-                      onsubmit="return confirm('Yakin ingin menghapus proyek ini?')">
-
-                    @csrf
-                    @method('DELETE')
-
-                    <button type="submit" class="btn btn-danger">
-                        Hapus
-                    </button>
-                </form>
-
-            </div>
-
-        </div>
-
-    @empty
-
-        <div class="project-card">
-            <p>Belum ada proyek yang tersedia.</p>
-        </div>
-
-    @endforelse
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>No.</th>
+                    <th>Nama</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Tanggal Daftar</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($users as $user)
+                    <tr>
+                        <td>{{ $users->firstItem() + $loop->index }}</td>
+                        <td>{{ $user->name }}</td>
+                        <td>{{ $user->email }}</td>
+                        <td>{{ ucfirst($user->role) }}</td>
+                        <td>{{ $user->created_at->format('d-m-Y') }}</td>
+                        <td>
+                            @if ($user->role !== 'admin')
+                                <form
+                                    action="{{ route('admin.users.destroy', $user) }}"
+                                    method="POST"
+                                    onsubmit="return confirm('Yakin ingin menghapus pengguna ini?')"
+                                >
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger">
+                                        Hapus
+                                    </button>
+                                </form>
+                            @else
+                                <span>-</span>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6">Tidak ada pengguna ditemukan.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
     <div class="pagination">
-        {{ $projects->links() }}
+        {{ $users->links() }}
     </div>
-
+</div>
 @endsection

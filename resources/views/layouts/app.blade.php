@@ -20,25 +20,68 @@
         header {
             background: #173b67;
             color: white;
-            padding: 20px 8%;
+            padding: 18px 8%;
         }
 
-        header h2 {
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .brand h2 {
             margin: 0;
+        }
+
+        .brand p {
+            margin: 5px 0 0;
+            font-size: 13px;
+            color: #dce7f5;
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-menu a,
+        .nav-menu button {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .nav-link {
+            padding: 9px 12px;
+            border-radius: 5px;
+        }
+
+        .nav-link:hover {
+            background: #28517e;
+        }
+
+        .nav-button {
+            background: #dc3545;
+            border: none;
+            padding: 9px 13px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .user-info {
+            font-size: 13px;
+            color: #dce7f5;
+            margin-right: 5px;
         }
 
         main {
             max-width: 1100px;
             margin: 35px auto;
             padding: 0 20px;
-        }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 25px;
         }
 
         .btn {
@@ -103,19 +146,83 @@
             margin-top: 20px;
         }
 
+        @media (max-width: 650px) {
+            header {
+                padding: 18px 5%;
+            }
+
+            .navbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .nav-menu {
+                width: 100%;
+            }
+        }
+
         @yield('extra-style')
     </style>
 </head>
 <body>
 
-    <header>
-        <h2>Garuda Hub</h2>
-        <p>Platform Lelang Proyek IT</p>
-    </header>
+<header>
+    <div class="navbar">
 
-    <main>
-        @yield('content')
-    </main>
+        <div class="brand">
+            <h2>Garuda Hub</h2>
+            <p>Platform Lelang Proyek IT</p>
+        </div>
+
+        <nav class="nav-menu">
+
+            @auth
+                <span class="user-info">
+                    {{ auth()->user()->name }}
+                    ({{ ucfirst(auth()->user()->role) }})
+                </span>
+
+                <a href="{{ route('dashboard') }}" class="nav-link">
+                    Dashboard
+                </a>
+
+                <a href="{{ route('projects.index') }}" class="nav-link">
+                    Daftar Proyek
+                </a>
+
+                @if(auth()->user()->role === 'admin')
+                    <a href="{{ route('admin.users.index') }}" class="nav-link">
+                        Manajemen Pengguna
+                    </a>
+                @endif
+
+                <form action="{{ route('logout') }}" method="POST">
+                    @csrf
+                    <button type="submit" class="nav-button">
+                        Logout
+                    </button>
+                </form>
+
+            @else
+
+                <a href="{{ route('login') }}" class="nav-link">
+                    Login
+                </a>
+
+                <a href="{{ route('register') }}" class="nav-link">
+                    Register
+                </a>
+
+            @endauth
+
+        </nav>
+
+    </div>
+</header>
+
+<main>
+    @yield('content')
+</main>
 
 </body>
 </html>
