@@ -44,6 +44,13 @@
             {{ $project->status === 'terbuka' ? 'Terbuka' : 'Ditutup' }}
         </p>
         <p><strong>Dibuat pada:</strong> {{ $project->created_at->format('d-m-Y H:i') }}</p>
+
+        @if ($project->completed_at)
+            <p><strong>Status Pengerjaan:</strong> Selesai</p>
+            <p><strong>Diselesaikan pada:</strong>
+                {{ $project->completed_at->format('d-m-Y H:i') }}
+            </p>
+        @endif
     </div>
 
     <hr>
@@ -51,8 +58,11 @@
     <h3>Deskripsi Proyek</h3>
     <p>{{ $project->description }}</p>
 
-    @if (auth()->user()->role === 'admin' ||
-        (auth()->user()->role === 'klien' && auth()->id() === $project->client_id))
+    @if (
+        auth()->user()->role === 'admin' ||
+        (auth()->user()->role === 'klien' &&
+        (int) auth()->id() === (int) $project->client_id)
+    )
         <div class="actions">
             <a href="{{ route('projects.edit', $project->id) }}" class="btn btn-secondary">
                 Edit Proyek
@@ -63,9 +73,35 @@
                   onsubmit="return confirm('Yakin ingin menghapus proyek ini?')">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn btn-danger">Hapus Proyek</button>
+
+                <button type="submit" class="btn btn-danger">
+                    Hapus Proyek
+                </button>
             </form>
         </div>
+    @endif
+
+    @if (
+        $project->status === 'ditutup' &&
+        !$project->completed_at &&
+        $project->bids->contains('is_winner', true) &&
+        (
+            auth()->user()->role === 'admin' ||
+            (auth()->user()->role === 'klien' &&
+            (int) auth()->id() === (int) $project->client_id)
+        )
+    )
+        <hr>
+
+        <form action="{{ route('projects.complete', $project->id) }}"
+              method="POST"
+              onsubmit="return confirm('Yakin proyek ini sudah selesai dikerjakan?')">
+            @csrf
+
+            <button type="submit" class="btn btn-primary">
+                Selesaikan Proyek
+            </button>
+        </form>
     @endif
 </div>
 
@@ -76,30 +112,41 @@
 @forelse ($project->bids as $bid)
     <div class="project-card">
         <p><strong>Developer:</strong> {{ $bid->developer->name }}</p>
-        <p><strong>Harga:</strong> Rp{{ number_format((float) $bid->price, 0, ',', '.') }}</p>
+
+        <p><strong>Harga:</strong>
+            Rp{{ number_format((float) $bid->price, 0, ',', '.') }}
+        </p>
+
         <p><strong>Durasi:</strong> {{ $bid->duration }} hari</p>
         <p><strong>Proposal:</strong> {{ $bid->proposal }}</p>
+
         <p><strong>Status:</strong>
             {{ $bid->is_winner ? 'Pemenang' : 'Belum dipilih' }}
         </p>
 
-                @if(
+        @if (
             $project->status === 'terbuka' &&
-            (auth()->user()->role === 'admin' ||
-            (auth()->user()->role === 'klien' && (int) auth()->id() === (int) $project->client_id))
+            (
+                auth()->user()->role === 'admin' ||
+                (auth()->user()->role === 'klien' &&
+                (int) auth()->id() === (int) $project->client_id)
+            )
         )
             <form action="{{ route('bids.winner', [$project->id, $bid->id]) }}"
-                method="POST"
-                onsubmit="return confirm('Pilih developer ini sebagai pemenang? Proyek akan langsung ditutup.')">
+                  method="POST"
+                  onsubmit="return confirm('Pilih developer ini sebagai pemenang? Proyek akan langsung ditutup.')">
                 @csrf
+
                 <button type="submit" class="btn btn-primary">
                     Pilih sebagai Pemenang
                 </button>
             </form>
         @endif
 
-        @if (auth()->user()->role === 'developer' &&
-            auth()->id() === $bid->developer_id)
+        @if (
+            auth()->user()->role === 'developer' &&
+            (int) auth()->id() === (int) $bid->developer_id
+        )
             <hr>
 
             <h4>Edit Penawaran</h4>
@@ -132,7 +179,7 @@
             </form>
 
             <form action="{{ route('bids.destroy', $bid->id) }}" method="POST"
-                onsubmit="return confirm('Yakin ingin menghapus penawaran ini?')">
+                  onsubmit="return confirm('Yakin ingin menghapus penawaran ini?')">
                 @csrf
                 @method('DELETE')
 
@@ -183,5 +230,69 @@
         <p>Proyek ini sudah ditutup dan tidak menerima penawaran.</p>
     @endif
 @endif
+
+    {{-- Form Rating Developer --}}
+    @if (
+        $project->completed_at &&
+        !$project->rating &&
+        auth()->user()->role === 'klien' &&
+        (int) auth()->id() === (int) $project->client_id
+    )
+        <hr>
+
+        <h2>Beri Rating Developer</h2>
+        <p>Bagaimana hasil pekerjaan developer pada proyek ini?</p>
+
+        <form action="{{ route('ratings.store', $project->id) }}" method="POST">
+            @csrf
+
+            <div class="form-group">
+                <label for="score">Rating</label>
+                <select name="score" id="score" required>
+                    <option value="">Pilih rating</option>
+                    @for ($i = 1; $i <= 5; $i++)
+                        <option value="{{ $i }}" {{ old('score') == $i ? 'selected' : '' }}>
+                            {{ $i }} Bintang
+                        </option>
+                    @endfor
+                </select>
+                @error('score')
+                    <small>{{ $message }}</small>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="review">Ulasan (Opsional)</label>
+                <textarea
+                    name="review"
+                    id="review"
+                    rows="4"
+                    placeholder="Tuliskan pengalamanmu bekerja sama dengan developer..."
+                >{{ old('review') }}</textarea>
+                @error('review')
+                    <small>{{ $message }}</small>
+                @enderror
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Kirim Rating
+            </button>
+        </form>
+    @endif
+
+    {{-- Tampilan Rating yang Sudah Diberikan --}}
+    @if ($project->rating)
+        <hr>
+
+        <h2>Rating Developer</h2>
+        <p>
+            Rating:
+            <strong>{{ $project->rating->score }}/5 Bintang</strong>
+        </p>
+
+        @if ($project->rating->review)
+            <p>Ulasan: {{ $project->rating->review }}</p>
+        @endif
+    @endif
 
 @endsection

@@ -6,7 +6,9 @@ use App\Http\Controllers\BidController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\RatingController;
 
+// Halaman utama
 Route::get('/', function () {
     return redirect()->route('projects.index');
 });
@@ -25,32 +27,68 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])
+// Dashboard
+Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware('auth')
     ->name('dashboard');
 
-// Fitur yang dapat diakses semua pengguna login
+// Fitur proyek untuk semua pengguna login
 Route::middleware('auth')->group(function () {
-    Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
-    Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
+    Route::get('/projects', [ProjectController::class, 'index'])
+        ->name('projects.index');
+
+    Route::post('/projects/{project}/ratings', [RatingController::class, 'store'])
+        ->whereNumber('project')
+        ->name('ratings.store');
+
+    Route::get('/projects/{project}', [ProjectController::class, 'show'])
+        ->whereNumber('project')
+        ->name('projects.show');
 });
 
 // Fitur pengelolaan proyek untuk klien dan admin
 Route::middleware(['auth', 'role:klien,admin'])->group(function () {
-    Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
-    Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
-    Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])->name('projects.edit');
-    Route::put('/projects/{project}', [ProjectController::class, 'update'])->name('projects.update');
-    Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])->name('projects.destroy');
+    Route::get('/projects/create', [ProjectController::class, 'create'])
+        ->name('projects.create');
+
+    Route::post('/projects', [ProjectController::class, 'store'])
+        ->name('projects.store');
+
+    Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])
+        ->whereNumber('project')
+        ->name('projects.edit');
+
+    Route::put('/projects/{project}', [ProjectController::class, 'update'])
+        ->whereNumber('project')
+        ->name('projects.update');
+
+    Route::delete('/projects/{project}', [ProjectController::class, 'destroy'])
+        ->whereNumber('project')
+        ->name('projects.destroy');
+
     Route::post('/projects/{project}/bids/{bid}/winner', [BidController::class, 'selectWinner'])
-    ->name('bids.winner');
+        ->whereNumber('project')
+        ->whereNumber('bid')
+        ->name('bids.winner');
+
+    Route::post('/projects/{project}/complete', [ProjectController::class, 'complete'])
+        ->whereNumber('project')
+        ->name('projects.complete');
 });
 
-// Fitur penawaran untuk developer
+// Fitur penawaran dan profil developer
 Route::middleware(['auth', 'role:developer'])->group(function () {
-    Route::post('/projects/{project}/bids', [BidController::class, 'store'])->name('bids.store');
-    Route::put('/bids/{bid}', [BidController::class, 'update'])->name('bids.update');
-    Route::delete('/bids/{bid}', [BidController::class, 'destroy'])->name('bids.destroy');
+    Route::post('/projects/{project}/bids', [BidController::class, 'store'])
+        ->whereNumber('project')
+        ->name('bids.store');
+
+    Route::put('/bids/{bid}', [BidController::class, 'update'])
+        ->whereNumber('bid')
+        ->name('bids.update');
+
+    Route::delete('/bids/{bid}', [BidController::class, 'destroy'])
+        ->whereNumber('bid')
+        ->name('bids.destroy');
 });
 
 // Panel administrasi
@@ -59,5 +97,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         ->name('users.index');
 
     Route::delete('/users/{user}', [UserController::class, 'destroy'])
+        ->whereNumber('user')
         ->name('users.destroy');
 });
