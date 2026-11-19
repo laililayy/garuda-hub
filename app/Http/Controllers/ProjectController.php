@@ -112,6 +112,41 @@ class ProjectController extends Controller
             ->with('success', 'Proyek berhasil diperbarui.');
     }
 
+        public function complete(Project $project)
+    {
+        $this->authorizeProject($project);
+
+        if ($project->status !== 'ditutup') {
+            return back()->withErrors([
+                'project' => 'Proyek harus ditutup dan memiliki developer terpilih.'
+            ]);
+        }
+
+        $winner = $project->bids()
+            ->where('is_winner', true)
+            ->exists();
+
+        if (!$winner) {
+            return back()->withErrors([
+                'project' => 'Belum ada developer yang dipilih sebagai pemenang.'
+            ]);
+        }
+
+        if ($project->completed_at) {
+            return back()->withErrors([
+                'project' => 'Proyek ini sudah diselesaikan.'
+            ]);
+        }
+
+        $project->update([
+            'completed_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('projects.show', $project->id)
+            ->with('success', 'Proyek berhasil ditandai selesai.');
+    }
+
     public function destroy(Project $project)
     {
         $this->authorizeProject($project);

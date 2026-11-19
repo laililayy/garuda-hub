@@ -25,15 +25,34 @@ class User extends Authenticatable
         ];
     }
 
-    // User sebagai klien dapat membuat banyak proyek
+    // Proyek yang dibuat oleh klien
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class, 'client_id');
     }
 
-    // User sebagai developer dapat membuat banyak penawaran
+    // Penawaran yang dibuat developer
     public function bids(): HasMany
     {
         return $this->hasMany(Bid::class, 'developer_id');
+    }
+
+    // Rating yang diberikan klien
+    public function givenRatings(): HasMany
+    {
+        return $this->hasMany(Rating::class, 'client_id');
+    }
+
+    // Rating yang diterima developer
+    public function receivedRatings(): HasMany
+    {
+        return $this->hasMany(Rating::class, 'developer_id');
+    }
+
+    // Penawaran yang berhasil dimenangkan developer
+    public function winningBids(): HasMany
+    {
+        return $this->hasMany(Bid::class, 'developer_id')
+            ->where('is_winner', true);
     }
 }
